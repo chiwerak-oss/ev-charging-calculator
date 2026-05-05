@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EV Charge Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --card: #111827;
+    --card2: #1a2235;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --green: #22d3a5;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --border: #1e293b;
+    --danger: #f43f5e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,229,255,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 60%);
+  }
+
+  /* Header */
+  .header {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+
+  .header-tag {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    border: 1px solid rgba(0,229,255,0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .header p {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* Card */
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Preset buttons */
+  .presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .preset-btn {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    color: var(--text);
+  }
+
+  .preset-btn:hover, .preset-btn.active {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.08);
+  }
+
+  .preset-btn .pname {
+    font-size: 11px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .preset-btn .pcap {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+  }
+
+  /* Inputs */
+  .field { margin-bottom: 20px; }
+
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .field label .val {
+    font-family: 'Space Mono', monospace;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* Slider track */
+  .slider-wrap {
+    position: relative;
+    height: 36px;
+    display: flex;
+    align-items: center;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(0,229,255,0.5);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .range-labels span {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  /* Number input */
+  .number-input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .number-input-wrap:focus-within { border-color: var(--accent); }
+
+  .number-input-wrap button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .number-input-wrap button:hover { color: var(--accent); }
+
+  .number-input-wrap input[type=number] {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    text-align: center;
+    outline: none;
+    width: 100%;
+    -moz-appearance: textfield;
+  }
+
+  .number-input-wrap input[type=number]::-webkit-inner-spin-button,
+  .number-input-wrap input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .unit-tag {
+    font-size: 11px;
+    color: var(--muted);
+    padding-right: 14px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Charger type */
+  .charger-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .charger-btn {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    color: var(--text);
+  }
+
+  .charger-btn:hover { border-color: var(--muted); }
+
+  .charger-btn.active {
+    border-color: var(--accent2);
+    background: rgba(124,58,237,0.12);
+  }
+
+  .charger-btn .cicon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .charger-btn .cname { font-size: 11px; font-weight: 600; display: block; }
+  .charger-btn .ckw {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--accent2);
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* Calculate button */
+  .calc-btn {
+    width: 100%;
+    max-width: 420px;
+    padding: 18px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+    box-shadow: 0 0 30px rgba(0,229,255,0.25);
+  }
+
+  .calc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(0,229,255,0.4);
+  }
+
+  .calc-btn:active { transform: translateY(0); }
+
+  /* Results */
+  .results {
+    width: 100%;
+    max-width: 420px;
+    display: none;
+    animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .results.show { display: block; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .result-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+
+  .result-box.full { grid-column: 1 / -1; }
+
+  .result-box.highlight {
+    border-color: rgba(0,229,255,0.3);
+    background: rgba(0,229,255,0.05);
+  }
+
+  .result-box.highlight2 {
+    border-color: rgba(34,211,165,0.3);
+    background: rgba(34,211,165,0.05);
+  }
+
+  .r-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .r-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+    line-height: 1;
+  }
+
+  .r-value.green { color: var(--green); }
+
+  .r-unit {
+    font-size: 12px;
+    color: var(--muted);
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* Progress bar */
+  .charge-visual {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .charge-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  .charge-bar-label .from { color: var(--danger); }
+  .charge-bar-label .to   { color: var(--green); }
+
+  .charge-track {
+    height: 12px;
+    background: var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .charge-fill-from {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: var(--danger);
+    border-radius: 6px;
+    transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .charge-fill-to {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--danger), var(--green));
+    border-radius: 6px;
+    transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  /* Breakdown */
+  .breakdown {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+
+  .breakdown-row .bk-label { color: var(--muted); }
+
+  .breakdown-row .bk-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* Reset */
+  .reset-btn {
+    width: 100%;
+    max-width: 420px;
+    padding: 14px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 32px;
+  }
+
+  .reset-btn:hover { border-color: var(--muted); color: var(--text); }
+
+  /* Footer */
+  .footer {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-tag">⚡ V2G Research Project</div>
+  <h1>EV Charge<br/><span>Calculator</span></h1>
+  <p>Compute cost &amp; time for any electric vehicle</p>
+</div>
+
+<!-- INPUTS CARD 1: Vehicle -->
+<div class="card">
+  <div class="card-title">01 — Vehicle</div>
+
+  <div style="margin-bottom:16px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Quick Select</div>
+  <div class="presets">
+    <button class="preset-btn" onclick="selectPreset(this,40)"  data-kw="40">
+      <span class="pname">Small EV</span>
+      <span class="pcap">40 kWh</span>
+    </button>
+    <button class="preset-btn active" onclick="selectPreset(this,75)" data-kw="75">
+      <span class="pname">Mid-Range</span>
+      <span class="pcap">75 kWh</span>
+    </button>
+    <button class="preset-btn" onclick="selectPreset(this,100)" data-kw="100">
+      <span class="pname">Long Range</span>
+      <span class="pcap">100 kWh</span>
+    </button>
+  </div>
+
+  <div class="field">
+    <label>Battery Capacity <span class="val" id="capVal">75 kWh</span></label>
+    <div class="slider-wrap">
+      <input type="range" id="capacity" min="10" max="150" value="75" oninput="onSlider('capacity','capVal',this.value,'kWh')"/>
+    </div>
+    <div class="range-labels"><span>10 kWh</span><span>150 kWh</span></div>
+  </div>
+
+  <div class="field">
+    <label>Current Charge <span class="val" id="currentVal">20%</span></label>
+    <div class="slider-wrap">
+      <input type="range" id="currentCharge" min="0" max="100" value="20" oninput="onSlider('currentCharge','currentVal',this.value,'%')"/>
+    </div>
+    <div class="range-labels"><span>0%</span><span>100%</span></div>
+  </div>
+
+  <div class="field">
+    <label>Target Charge <span class="val" id="targetVal">90%</span></label>
+    <div class="slider-wrap">
+      <input type="range" id="targetCharge" min="0" max="100" value="90" oninput="onSlider('targetCharge','targetVal',this.value,'%')"/>
+    </div>
+    <div class="range-labels"><span>0%</span><span>100%</span></div>
+  </div>
+</div>
+
+<!-- INPUTS CARD 2: Electricity -->
+<div class="card">
+  <div class="card-title">02 — Electricity</div>
+
+  <div class="field">
+    <label>Rate per kWh</label>
+    <div class="number-input-wrap">
+      <button onclick="stepRate(-0.01)">−</button>
+      <input type="number" id="rate" value="0.12" min="0.01" max="5" step="0.01"/>
+      <span class="unit-tag">USD/kWh</span>
+      <button onclick="stepRate(0.01)">+</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Charger Efficiency <span class="val" id="effVal">90%</span></label>
+    <div class="slider-wrap">
+      <input type="range" id="efficiency" min="70" max="100" value="90" oninput="onSlider('efficiency','effVal',this.value,'%')"/>
+    </div>
+    <div class="range-labels"><span>70%</span><span>100%</span></div>
+  </div>
+</div>
+
+<!-- INPUTS CARD 3: Charger -->
+<div class="card">
+  <div class="card-title">03 — Charger Type</div>
+
+  <div class="charger-grid">
+    <button class="charger-btn" onclick="selectCharger(this,2.4)">
+      <span class="cicon">🔌</span>
+      <span class="cname">Level 1</span>
+      <span class="ckw">2.4 kW</span>
+    </button>
+    <button class="charger-btn active" onclick="selectCharger(this,7.2)">
+      <span class="cicon">⚡</span>
+      <span class="cname">Level 2</span>
+      <span class="ckw">7.2 kW</span>
+    </button>
+    <button class="charger-btn" onclick="selectCharger(this,50)">
+      <span class="cicon">🚀</span>
+      <span class="cname">DC Fast</span>
+      <span class="ckw">50 kW</span>
+    </button>
+    <button class="charger-btn" onclick="selectCharger(this,150)">
+      <span class="cicon">⚡⚡</span>
+      <span class="cname">Super</span>
+      <span class="ckw">150 kW</span>
+    </button>
+    <button class="charger-btn" onclick="selectCharger(this,250)">
+      <span class="cicon">🏎️</span>
+      <span class="cname">Ultra</span>
+      <span class="ckw">250 kW</span>
+    </button>
+    <button class="charger-btn" id="customChargerBtn" onclick="toggleCustomCharger()">
+      <span class="cicon">✏️</span>
+      <span class="cname">Custom</span>
+      <span class="ckw" id="customKwDisplay">— kW</span>
+    </button>
+  </div>
+
+  <div id="customChargerField" style="display:none;margin-top:16px;">
+    <div class="field" style="margin-bottom:0">
+      <label>Custom Charger Power</label>
+      <div class="number-input-wrap">
+        <button onclick="stepCustomKw(-1)">−</button>
+        <input type="number" id="customKw" value="11" min="1" max="500" step="1" oninput="updateCustomKw()"/>
+        <span class="unit-tag">kW</span>
+        <button onclick="stepCustomKw(1)">+</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="calc-btn" onclick="calculate()">⚡ Calculate Charge</button>
+
+<!-- RESULTS -->
+<div class="results" id="results">
+
+  <div class="charge-visual">
+    <div class="charge-bar-label">
+      <span class="from" id="barFrom">20% — Current</span>
+      <span class="to"   id="barTo">90% — Target</span>
+    </div>
+    <div class="charge-track">
+      <div class="charge-fill-to"  id="fillTo"   style="width:0%"></div>
+      <div class="charge-fill-from" id="fillFrom" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="result-grid">
+    <div class="result-box highlight">
+      <span class="r-label">Total Cost</span>
+      <span class="r-value" id="rCost">—</span>
+      <span class="r-unit">USD</span>
+    </div>
+    <div class="result-box highlight2">
+      <span class="r-label">Charge Time</span>
+      <span class="r-value green" id="rTime">—</span>
+      <span class="r-unit" id="rTimeUnit">hours</span>
+    </div>
+    <div class="result-box full">
+      <span class="r-label">Energy Required</span>
+      <span class="r-value" id="rEnergy" style="font-size:22px">—</span>
+      <span class="r-unit">kWh (from grid, including losses)</span>
+    </div>
+  </div>
+
+  <div class="breakdown">
+    <div class="card-title">Breakdown</div>
+    <div class="breakdown-row">
+      <span class="bk-label">Usable energy needed</span>
+      <span class="bk-val" id="bkUsable">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="bk-label">Charger efficiency loss</span>
+      <span class="bk-val" id="bkLoss">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="bk-label">Grid draw required</span>
+      <span class="bk-val" id="bkGrid">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="bk-label">Electricity rate</span>
+      <span class="bk-val" id="bkRate">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="bk-label">Charger power</span>
+      <span class="bk-val" id="bkCharger">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="bk-label">Charge added</span>
+      <span class="bk-val" id="bkAdded">—</span>
+    </div>
+  </div>
+
+</div>
+
+<button class="reset-btn" id="resetBtn" onclick="reset()" style="display:none">↺ Reset</button>
+
+<div class="footer">
+  Built by Kevin Chiwera &nbsp;|&nbsp;
+  <a href="https://github.com/chiwerak-oss/ev-charging-calculator" target="_blank">GitHub</a>
+  &nbsp;|&nbsp; V2G Capstone Research · Africa University
+</div>
+
+<script>
+  let chargerKw = 7.2;
+
+  function onSlider(id, labelId, val, unit) {
+    document.getElementById(labelId).textContent = val + unit;
+    updateSliderFill(id, val);
+    // keep current <= target
+    if (id === 'currentCharge') {
+      const t = parseInt(document.getElementById('targetCharge').value);
+      if (parseInt(val) > t) {
+        document.getElementById('targetCharge').value = val;
+        document.getElementById('targetVal').textContent = val + '%';
+        updateSliderFill('targetCharge', val);
+      }
+    }
+    if (id === 'targetCharge') {
+      const c = parseInt(document.getElementById('currentCharge').value);
+      if (parseInt(val) < c) {
+        document.getElementById('currentCharge').value = val;
+        document.getElementById('currentVal').textContent = val + '%';
+        updateSliderFill('currentCharge', val);
+      }
+    }
+  }
+
+  function updateSliderFill(id, val) {
+    const el = document.getElementById(id);
+    const min = parseFloat(el.min), max = parseFloat(el.max);
+    const pct = ((val - min) / (max - min)) * 100;
+    el.style.background = `linear-gradient(90deg, var(--accent) ${pct}%, var(--border) ${pct}%)`;
+  }
+
+  // init fills
+  ['capacity','currentCharge','targetCharge','efficiency'].forEach(id => {
+    const el = document.getElementById(id);
+    updateSliderFill(id, el.value);
+  });
+
+  function selectPreset(btn, kw) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('capacity').value = kw;
+    document.getElementById('capVal').textContent = kw + ' kWh';
+    updateSliderFill('capacity', kw);
+  }
+
+  function selectCharger(btn, kw) {
+    document.querySelectorAll('.charger-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    chargerKw = kw;
+    document.getElementById('customChargerField').style.display = 'none';
+  }
+
+  function toggleCustomCharger() {
+    const field = document.getElementById('customChargerField');
+    const show = field.style.display === 'none';
+    field.style.display = show ? 'block' : 'none';
+    if (show) {
+      document.querySelectorAll('.charger-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('customChargerBtn').classList.add('active');
+      updateCustomKw();
+    }
+  }
+
+  function updateCustomKw() {
+    const v = parseFloat(document.getElementById('customKw').value) || 11;
+    chargerKw = v;
+    document.getElementById('customKwDisplay').textContent = v + ' kW';
+  }
+
+  function stepRate(d) {
+    const el = document.getElementById('rate');
+    el.value = Math.max(0.01, Math.min(5, parseFloat(el.value) + d)).toFixed(2);
+  }
+
+  function stepCustomKw(d) {
+    const el = document.getElementById('customKw');
+    el.value = Math.max(1, Math.min(500, parseInt(el.value) + d));
+    updateCustomKw();
+  }
+
+  function calculate() {
+    const cap     = parseFloat(document.getElementById('capacity').value);
+    const current = parseFloat(document.getElementById('currentCharge').value) / 100;
+    const target  = parseFloat(document.getElementById('targetCharge').value) / 100;
+    const rate    = parseFloat(document.getElementById('rate').value);
+    const eff     = parseFloat(document.getElementById('efficiency').value) / 100;
+
+    if (target <= current) {
+      alert('Target charge must be higher than current charge!');
+      return;
+    }
+
+    const usable  = cap * (target - current);          // kWh into battery
+    const grid    = usable / eff;                      // kWh from grid
+    const loss    = grid - usable;
+    const cost    = grid * rate;
+    const hours   = grid / chargerKw;
+
+    // Format time
+    let timeDisplay, timeUnit;
+    if (hours < 1) {
+      timeDisplay = Math.round(hours * 60).toString();
+      timeUnit = 'minutes';
+    } else {
+      timeDisplay = hours.toFixed(1);
+      timeUnit = 'hours';
+    }
+
+    // Update results
+    document.getElementById('rCost').textContent   = '$' + cost.toFixed(2);
+    document.getElementById('rTime').textContent   = timeDisplay;
+    document.getElementById('rTimeUnit').textContent = timeUnit;
+    document.getElementById('rEnergy').textContent = grid.toFixed(2) + ' kWh';
+
+    document.getElementById('bkUsable').textContent  = usable.toFixed(2) + ' kWh';
+    document.getElementById('bkLoss').textContent    = loss.toFixed(2) + ' kWh (' + Math.round((1-eff)*100) + '%)';
+    document.getElementById('bkGrid').textContent    = grid.toFixed(2) + ' kWh';
+    document.getElementById('bkRate').textContent    = '$' + rate.toFixed(2) + '/kWh';
+    document.getElementById('bkCharger').textContent = chargerKw + ' kW';
+    document.getElementById('bkAdded').textContent   = Math.round((target - current) * 100) + '%';
+
+    // Bar
+    document.getElementById('barFrom').textContent = Math.round(current*100) + '% — Current';
+    document.getElementById('barTo').textContent   = Math.round(target*100)  + '% — Target';
+    setTimeout(() => {
+      document.getElementById('fillTo').style.width   = (target  * 100) + '%';
+      document.getElementById('fillFrom').style.width = (current * 100) + '%';
+    }, 50);
+
+    // Show results
+    document.getElementById('results').classList.add('show');
+    document.getElementById('resetBtn').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function reset() {
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('resetBtn').style.display = 'none';
+    document.getElementById('fillTo').style.width = '0%';
+    document.getElementById('fillFrom').style.width = '0%';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
